@@ -6,3 +6,45 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Category {
+  id       Int       @id @default(autoincrement()) @map("category_id")
+  name     String    @unique
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement()) @map("product_id")
+  name        String
+  description String
+  imageUrl1   String  @map("image_url_1")
+  imageUrl2   String?  @map("image_url_2")
+  imageAlt    String  @map("image_alt")
+  categoryId  Int      @map("category_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  variants ProductVariant[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id            Int      @id @default(autoincrement()) @map("variant_id")
+  productId     Int      @map("product_id")
+  size          String
+  sku           String   @unique
+  price         Decimal  @db.Decimal(10, 2)
+  stockQuantity Int      @default(0) @map("stock_quantity")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@map("product_variants")
+}
