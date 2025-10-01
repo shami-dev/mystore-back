@@ -1,37 +1,64 @@
 import { Router, Request, Response, NextFunction } from "express";
 import db from "../config/db.js";
+import { flattenError, z } from "zod";
 
 const router = Router();
 
+const productSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(100, { message: "Name must be under 100 characters" }),
+  description: z
+    .string()
+    .min(1, { message: "Description is required" })
+    .max(500, { message: "Description must be under 500 characters" }),
+  imageAlt: z.string().min(1, { message: "Image alt is required" }).max(150, {
+    message: "Image alternative text must be under 150 characters",
+  }),
+  imageUrl1: z.url(),
+  imageUrl2: z.union([z.url(), z.literal("")]).optional(),
+  categoryId: z.number().int().positive(),
+  variants: z.array(
+    z.object({
+      size: z
+        .string()
+        .min(1, { message: "Size is required" })
+        .max(100, { message: "Size must be under 100 characters" }),
+      sku: z
+        .string()
+        .min(1, { message: "SKU is required" })
+        .max(100, { message: "SKU must be under 100 characters" }),
+      price: z.number().positive(),
+      stockQuantity: z.number().int().nonnegative(),
+      sortOrder: z.number().int().nonnegative(),
+    })
+  ),
+});
+
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  const result = productSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: "Validation failed",
+      details: flattenError(result.error).fieldErrors,
+    });
+  }
+
+  const validated = result.data;
+
   try {
-    const {
-      name,
-      description,
-      imageUrl1,
-      imageUrl2,
-      imageAlt,
-      categoryId,
-      variants,
-    } = req.body;
-
-    if (!name || !description || !imageUrl1 || !imageAlt || !categoryId) {
-      return res.status(400).json({
-        error:
-          "name, description, imageUrl1, imageAlt, and categoryId are required",
-      });
-    }
-
     const product = await db.product.create({
       data: {
-        name,
-        description,
-        imageUrl1,
-        imageUrl2,
-        imageAlt,
-        categoryId,
+        name: validated.name,
+        description: validated.description,
+        imageUrl1: validated.imageUrl1,
+        imageUrl2: validated.imageUrl2,
+        imageAlt: validated.imageAlt,
+        categoryId: validated.categoryId,
         variants: {
-          create: variants?.map((v: any) => ({
+          create: validated.variants.map((v) => ({
             size: v.size,
             sku: v.sku,
             price: v.price,
