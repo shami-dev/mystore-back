@@ -16,6 +16,4 @@ app.use("/api/v1/products", router);
 
 app.use(errorHandler);
 
-export default app;
-
 export { app };
