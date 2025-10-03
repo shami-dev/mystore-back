@@ -79,4 +79,47 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const products = await db.product.findMany({
+      select: {
+        id: true,
+        name: true,
+        imageUrl1: true,
+        imageUrl2: true,
+        imageAlt: true,
+        variants: {
+          select: {
+            price: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const items = products.map((p) => {
+      const prices = p.variants.map((v) => Number(v.price));
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+
+      return {
+        id: p.id,
+        name: p.name,
+        imageUrl1: p.imageUrl1,
+        imageUrl2: p.imageUrl2 || "",
+        imageAlt: p.imageAlt || "",
+        priceRange: {
+          min: minPrice,
+          max: maxPrice,
+        },
+      };
+    });
+
+    return res.status(200).json(items);
+  } catch (err) {
+    console.error("GET /products error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export { router };
