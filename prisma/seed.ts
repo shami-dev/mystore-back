@@ -10,23 +10,20 @@ async function main() {
 
   console.log("Creating categories...");
 
-  const shoesCategory = await prisma.category.create({
-    data: { name: "Shoes" },
-  });
-
   const clothingCategory = await prisma.category.create({
-    data: { name: "Clothing" },
+    data: { id: 1, name: "Apparel" },
   });
 
   const accessoriesCategory = await prisma.category.create({
-    data: { name: "Accessories" },
+    data: { id: 2, name: "Accessories" },
   });
 
   console.log("Seeding finished!");
   console.log("Categories created:", [
-    shoesCategory.name,
+    clothingCategory.id,
     clothingCategory.name,
     accessoriesCategory.name,
+    accessoriesCategory.id,
   ]);
 }
 
