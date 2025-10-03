@@ -81,7 +81,10 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
+    const { categoryId } = req.query;
+
     const products = await db.product.findMany({
+      where: categoryId ? { categoryId: Number(categoryId) } : undefined,
       select: {
         id: true,
         name: true,
