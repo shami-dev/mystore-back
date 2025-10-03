@@ -125,4 +125,55 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const product = await db.product.findUnique({
+      where: { id: Number(id) },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        imageUrl1: true,
+        imageUrl2: true,
+        imageAlt: true,
+        variants: {
+          select: {
+            sku: true,
+            size: true,
+            stockQuantity: true,
+            price: true,
+          },
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const item = {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      imageUrl1: product.imageUrl1,
+      imageUrl2: product.imageUrl2 || "",
+      imageAlt: product.imageAlt,
+      variants: product.variants.map((v) => ({
+        sku: v.sku,
+        size: v.size,
+        stockQuantity: v.stockQuantity,
+        price: v.price,
+      })),
+    };
+
+    return res.status(200).json(item);
+  } catch (err) {
+    console.error("GET /products/:id error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export { router };
